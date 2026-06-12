@@ -187,6 +187,104 @@ app.get("/api/setup", async (req, res) => {
 });
 
 // ===============================
+// API: віддає фото вже як RGB565 800x480
+// ===============================
+
+app.get("/api/devices/:deviceCode/photos/:photoId/raw", async (req, res) => {
+  try {
+    const { deviceCode, photoId } = req.params;
+    const { secret } = req.query;
+
+    if (!secret) {
+      return res.status(400).json({
+        success: false,
+        message: "secret обовʼязковий"
+      });
+    }
+
+    const deviceResult = await pool.query(
+      "SELECT * FROM devices WHERE device_code = $1",
+      [deviceCode]
+    );
+
+    if (deviceResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Пристрій не знайдено"
+      });
+    }
+
+    const device = deviceResult.rows[0];
+
+    if (device.secret !== secret) {
+      return res.status(403).json({
+        success: false,
+        message: "Невірний secret"
+      });
+    }
+
+    const photoResult = await pool.query(
+      `
+      SELECT *
+      FROM photos
+      WHERE id = $1
+        AND to_device_code = $2
+      `,
+      [photoId, deviceCode]
+    );
+
+    if (photoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Фото не знайдено"
+      });
+    }
+
+    const photo = photoResult.rows[0];
+
+    const imageResponse = await fetch(photo.image_url);
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+
+    const rgbBuffer = await sharp(imageBuffer)
+      .rotate()
+      .resize(800, 480, {
+        fit: "cover",
+        position: "center"
+      })
+      .removeAlpha()
+      .raw()
+      .toBuffer();
+
+    const rgb565Buffer = Buffer.alloc(800 * 480 * 2);
+
+    for (let i = 0, j = 0; i < rgbBuffer.length; i += 3, j += 2) {
+      const r = rgbBuffer[i];
+      const g = rgbBuffer[i + 1];
+      const b = rgbBuffer[i + 2];
+
+      const rgb565 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+
+      rgb565Buffer[j] = rgb565 & 0xFF;
+      rgb565Buffer[j + 1] = (rgb565 >> 8) & 0xFF;
+    }
+
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Content-Length", rgb565Buffer.length);
+
+    res.send(rgb565Buffer);
+
+  } catch (error) {
+    console.error("RAW PHOTO ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Помилка отримання RAW фото",
+      error: error.message
+    });
+  }
+});
+
+// ===============================
 // API: додати Максімку і Алінку
 // ===============================
 app.get("/api/seed", async (req, res) => {
