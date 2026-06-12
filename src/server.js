@@ -245,16 +245,25 @@ app.get("/api/devices/:deviceCode/photos/:photoId/raw", async (req, res) => {
     const imageResponse = await fetch(photo.image_url);
     const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
 
-    const rgbBuffer = await sharp(imageBuffer)
-      .rotate()
-      .resize(480, 800, {
-        fit: "cover",
-        position: "center"
-      })
-      .removeAlpha()
-      .raw()
-      .toBuffer();
-
+    const jpgBuffer = await sharp(imageBuffer)
+    .rotate()
+    .resize(480, 800, {
+    fit: "inside",
+    withoutEnlargement: false,
+    background: {
+      r: 0,
+      g: 0,
+      b: 0,
+      alpha: 1
+    }
+    })
+    .jpeg({
+      quality: 88,
+      progressive: false,
+      mozjpeg: true,
+      chromaSubsampling: "4:4:4"
+    })
+  .toBuffer();
     const rgb565Buffer = Buffer.alloc(480 * 800 * 2);
 
     for (let i = 0, j = 0; i < rgbBuffer.length; i += 3, j += 2) {
