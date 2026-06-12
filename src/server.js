@@ -247,7 +247,7 @@ app.get("/api/devices/:deviceCode/photos/:photoId/raw", async (req, res) => {
 
     const rgbBuffer = await sharp(imageBuffer)
       .rotate()
-      .resize(800, 480, {
+      .resize(480, 800, {
         fit: "cover",
         position: "center"
       })
@@ -255,7 +255,7 @@ app.get("/api/devices/:deviceCode/photos/:photoId/raw", async (req, res) => {
       .raw()
       .toBuffer();
 
-    const rgb565Buffer = Buffer.alloc(800 * 480 * 2);
+    const rgb565Buffer = Buffer.alloc(480 * 800 * 2);
 
     for (let i = 0, j = 0; i < rgbBuffer.length; i += 3, j += 2) {
       const r = rgbBuffer[i];
@@ -367,7 +367,7 @@ app.get("/api/devices", async (req, res) => {
 async function savePhotoFile(buffer, fileName, req) {
   const processedImageBuffer = await sharp(buffer)
     .rotate()
-    .resize(800, 480, {
+    .resize(480, 800, {
       fit: "inside",
       withoutEnlargement: true,
       background: {
