@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Photo Frame Sender</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, #ffb6d9 0, transparent 35%),
+        radial-gradient(circle at bottom right, #93c5fd 0, transparent 35%),
+        linear-gradient(135deg, #111827, #1f2937);
+      color: #ffffff;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 760px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(18px);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    .title {
+      font-size: 32px;
+      font-weight: 900;
+      margin: 0 0 8px;
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      margin: 0 0 26px;
+      color: rgba(255, 255, 255, 0.75);
+      line-height: 1.5;
+    }
+
+    .recipient-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .recipient input {
+      display: none;
+    }
+
+    .recipient-card {
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 22px;
+      padding: 18px 14px;
+      cursor: pointer;
+      transition: 0.2s;
+      text-align: center;
+      user-select: none;
+    }
+
+    .recipient-card:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .recipient input:checked + .recipient-card {
+      border-color: #ffffff;
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.85), rgba(59, 130, 246, 0.85));
+      box-shadow: 0 12px 32px rgba(59, 130, 246, 0.25);
+    }
+
+    .emoji-big {
+      font-size: 34px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .recipient-name {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .upload-box {
+      display: block;
+      width: 100%;
+      border: 2px dashed rgba(255, 255, 255, 0.35);
+      border-radius: 24px;
+      padding: 34px 20px;
+      text-align: center;
+      margin: 0 0 18px 0;
+      background: rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      transition: 0.2s;
+      overflow: hidden;
+    }
+
+    .upload-box:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.55);
+    }
+
+    .upload-box input {
+      display: none;
+    }
+
+    .upload-title {
+      font-weight: 900;
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+
+    .upload-subtitle {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    .editor {
+      display: none;
+      margin-bottom: 18px;
+    }
+
+    .editor-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .file-name {
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cancel-btn {
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(239, 68, 68, 0.25);
+      color: white;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .editor-layout {
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .canvas-wrap {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.32);
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      cursor: grab;
+    }
+
+    canvas:active {
+      cursor: grabbing;
+    }
+
+    .tools-panel {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 22px;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .tool-title {
+      font-weight: 900;
+      font-size: 16px;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: rgba(255,255,255,0.68);
+      line-height: 1.45;
+    }
+
+    .input {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.12);
+      color: white;
+      border-radius: 16px;
+      padding: 13px 14px;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .input::placeholder {
+      color: rgba(255,255,255,0.5);
+    }
+
+    .range-row {
+      display: grid;
+      gap: 6px;
+    }
+
+    .range-row label {
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .color-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .color-btn {
+      height: 34px;
+      border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.25);
+      cursor: pointer;
+    }
+
+    .color-btn.active {
+      border-color: white;
+      transform: scale(1.05);
+    }
+
+    .emoji-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .emoji-btn {
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border-radius: 14px;
+      padding: 10px 0;
+      font-size: 22px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .emoji-btn:hover {
+      background: rgba(255,255,255,0.22);
+      transform: translateY(-1px);
+    }
+
+    .tool-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .small-btn {
+      border: none;
+      border-radius: 16px;
+      padding: 13px 12px;
+      background: rgba(255,255,255,0.14);
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .small-btn:hover {
+      background: rgba(255,255,255,0.22);
+    }
+
+    .button {
+      display: block;
+      width: 100%;
+      border: none;
+      border-radius: 18px;
+      padding: 16px 20px;
+      margin-top: 18px;
+      background: linear-gradient(135deg, #ec4899, #3b82f6);
+      color: white;
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 14px 35px rgba(59, 130, 246, 0.3);
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 45px rgba(236, 72, 153, 0.35);
+    }
+
+    .button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .result {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      display: none;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .result.success {
+      display: block;
+      background: rgba(34, 197, 94, 0.18);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+    }
+
+    .result.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.18);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .history {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .history-title {
+      font-weight: 900;
+      margin-bottom: 10px;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 10px;
+      max-height: 260px;
+      overflow: auto;
+    }
+
+    .history-item {
+      display: grid;
+      grid-template-columns: 64px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.09);
+      padding: 10px;
+      border-radius: 16px;
+    }
+
+    .history-item img {
+      width: 64px;
+      height: 42px;
+      object-fit: cover;
+      border-radius: 10px;
+      background: #000;
+    }
+
+    .history-name {
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .history-date {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 2px;
+    }
+
+    .badge {
+      font-size: 12px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .badge.new {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fde68a;
+    }
+
+    .badge.seen {
+      background: rgba(34, 197, 94, 0.2);
+      color: #bbf7d0;
+    }
+
+    @media (max-width: 760px) {
+      .editor-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .tools-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 14px;
+      }
+
+      .card {
+        padding: 20px;
+      }
+
+      .title {
+        font-size: 26px;
+      }
+
+      .recipient-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .history-item {
+        grid-template-columns: 56px 1fr;
+      }
+
+      .badge {
+        grid-column: 2;
+        width: fit-content;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <section class="card">
+      <h1 class="title">Відправити фото 💌</h1>
+      <p class="subtitle">
+        Вибери отримувача, додай текст або емодзі, і відправ фото на ESP-фоторамку.
+      </p>
+
+      <form id="photoForm">
+        <div class="recipient-grid">
+          <label class="recipient">
+            <input type="radio" name="recipient" value="maksymka" checked />
+            <div class="recipient-card">
+              <span class="emoji-big">🧑‍💻</span>
+              <span class="recipient-name">Максімкі</span>
+            </div>
+          </label>
+
+          <label class="recipient">
+            <input type="radio" name="recipient" value="alinka" />
+            <div class="recipient-card">
+              <span class="emoji-big">🌸</span>
+              <span class="recipient-name">Алінкі</span>
+            </div>
+          </label>
+        </div>
+
+        <label id="uploadBox" class="upload-box" for="photoInput">
+          <div class="upload-title">Натисни, щоб вибрати фото</div>
+          <div class="upload-subtitle">JPG, PNG, WEBP до 12 MB</div>
+          <input id="photoInput" name="photo" type="file" accept="image/*" />
+        </label>
+
+        <div id="editor" class="editor">
+          <div class="editor-top">
+            <div id="fileName" class="file-name">Фото вибрано</div>
+            <button id="cancelPhotoBtn" class="cancel-btn" type="button">
+              Скасувати фото
+            </button>
+          </div>
+
+          <div class="editor-layout">
+            <div class="canvas-wrap">
+              <canvas id="photoCanvas" width="800" height="480"></canvas>
+            </div>
+
+            <div class="tools-panel">
+              <div>
+                <div class="tool-title">Редактор</div>
+                <div class="hint">
+                  Введи текст і натисни “Додати текст”. Потім можеш перетягнути його по фото.
+                </div>
+              </div>
+
+              <input
+                id="textInput"
+                class="input"
+                type="text"
+                placeholder="Текст на фото..."
+                maxlength="40"
+              />
+
+              <div class="range-row">
+                <label for="sizeRange">Розмір: <span id="sizeValue">44</span></label>
+                <input id="sizeRange" type="range" min="24" max="90" value="44" />
+              </div>
+
+              <div class="color-row">
+                <button type="button" class="color-btn active" data-color="#ffffff" style="background:#ffffff"></button>
+                <button type="button" class="color-btn" data-color="#ff4fa3" style="background:#ff4fa3"></button>
+                <button type="button" class="color-btn" data-color="#60a5fa" style="background:#60a5fa"></button>
+                <button type="button" class="color-btn" data-color="#facc15" style="background:#facc15"></button>
+              </div>
+
+              <button type="button" id="addTextBtn" class="small-btn">
+                Додати текст
+              </button>
+
+              <div class="emoji-row">
+                <button type="button" class="emoji-btn" data-emoji="❤️">❤️</button>
+                <button type="button" class="emoji-btn" data-emoji="😂">😂</button>
+                <button type="button" class="emoji-btn" data-emoji="😍">😍</button>
+                <button type="button" class="emoji-btn" data-emoji="🥺">🥺</button>
+                <button type="button" class="emoji-btn" data-emoji="🔥">🔥</button>
+                <button type="button" class="emoji-btn" data-emoji="🌸">🌸</button>
+                <button type="button" class="emoji-btn" data-emoji="💋">💋</button>
+                <button type="button" class="emoji-btn" data-emoji="✨">✨</button>
+              </div>
+
+              <div class="tool-row">
+                <button type="button" id="undoBtn" class="small-btn">
+                  Назад
+                </button>
+
+                <button type="button" id="clearEditBtn" class="small-btn">
+                  Очистити
+                </button>
+              </div>
+
+              <div class="hint">
+                Підказка: натисни на текст або емодзі на фото й перетягуй його.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button id="sendButton" class="button" type="submit">
+          Відправити фото
+        </button>
+
+        <div id="result" class="result"></div>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("photoForm");
+    const uploadBox = document.getElementById("uploadBox");
+    const photoInput = document.getElementById("photoInput");
+    const result = document.getElementById("result");
+    const sendButton = document.getElementById("sendButton");
+    const historyList = document.getElementById("historyList");
+
+    const editor = document.getElementById("editor");
+    const fileName = document.getElementById("fileName");
+    const cancelPhotoBtn = document.getElementById("cancelPhotoBtn");
+
+    const canvas = document.getElementById("photoCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const textInput = document.getElementById("textInput");
+    const addTextBtn = document.getElementById("addTextBtn");
+    const clearEditBtn = document.getElementById("clearEditBtn");
+    const undoBtn = document.getElementById("undoBtn");
+    const sizeRange = document.getElementById("sizeRange");
+    const sizeValue = document.getElementById("sizeValue");
+
+    let loadedImage = null;
+    let edits = [];
+    let selectedColor = "#ffffff";
+    let selectedEditIndex = -1;
+    let dragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    sizeRange.addEventListener("input", () => {
+      sizeValue.textContent = sizeRange.value;
+    });
+
+    document.querySelectorAll(".color-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".color-btn").forEach(btn => btn.classList.remove("active"));
+        button.classList.add("active");
+        selectedColor = button.dataset.color;
+      });
+    });
+
+    photoInput.addEventListener("change", () => {
+      const file = photoInput.files[0];
+
+      if (!file) {
+        resetSelectedPhoto();
+        return;
+      }
+
+      const img = new Image();
+
+      img.onload = () => {
+        loadedImage = img;
+        edits = [];
+        selectedEditIndex = -1;
+
+        uploadBox.style.display = "none";
+        editor.style.display = "block";
+        fileName.textContent = file.name;
+
+        drawCanvas();
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+
+    cancelPhotoBtn.addEventListener("click", () => {
+      resetSelectedPhoto();
+      showResult("Фото скасовано", "success");
+    });
+
+    function resetSelectedPhoto() {
+      photoInput.value = "";
+      loadedImage = null;
+      edits = [];
+      selectedEditIndex = -1;
+      dragging = false;
+
+      textInput.value = "";
+      uploadBox.style.display = "block";
+      editor.style.display = "none";
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    addTextBtn.addEventListener("click", () => {
+      const text = textInput.value.trim();
+
+      if (!loadedImage) {
+        showResult("Спочатку вибери фото", "error");
+        return;
+      }
+
+      if (!text) {
+        showResult("Напиши текст, який хочеш додати", "error");
+        return;
+      }
+
+      edits.push({
+        type: "text",
+        value: text,
+        x: canvas.width / 2,
+        y: canvas.height - 70,
+        size: Number(sizeRange.value),
+        color: selectedColor
+      });
+
+      selectedEditIndex = edits.length - 1;
+      drawCanvas();
+    });
+
+    document.querySelectorAll(".emoji-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (!loadedImage) {
+          showResult("Спочатку вибери фото", "error");
+          return;
+        }
+
+        edits.push({
+          type: "emoji",
+          value: button.dataset.emoji,
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          size: Number(sizeRange.value) + 24,
+          color: "#ffffff"
+        });
+
+        selectedEditIndex = edits.length - 1;
+        drawCanvas();
+      });
+    });
+
+    undoBtn.addEventListener("click", () => {
+      if (edits.length === 0) return;
+
+      edits.pop();
+      selectedEditIndex = -1;
+      drawCanvas();
+    });
+
+    clearEditBtn.addEventListener("click", () => {
+      edits = [];
+      selectedEditIndex = -1;
+      drawCanvas();
+      showResult("Правки очищено", "success");
+    });
+
+    canvas.addEventListener("mousedown", startDrag);
+    canvas.addEventListener("mousemove", moveDrag);
+    canvas.addEventListener("mouseup", endDrag);
+    canvas.addEventListener("mouseleave", endDrag);
+
+    canvas.addEventListener("touchstart", startDrag, { passive: false });
+    canvas.addEventListener("touchmove", moveDrag, { passive: false });
+    canvas.addEventListener("touchend", endDrag);
+
+    function getPointerPosition(event) {
+      if (event.touches && event.touches.length > 0) {
+        event.preventDefault();
+        event = event.touches[0];
+      }
+
+      const rect = canvas.getBoundingClientRect();
+
+      return {
+        x: (event.clientX - rect.left) * (canvas.width / rect.width),
+        y: (event.clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    function startDrag(event) {
+      if (!loadedImage) return;
+
+      const pos = getPointerPosition(event);
+      const hitIndex = findEditAt(pos.x, pos.y);
+
+      if (hitIndex === -1) {
+        selectedEditIndex = -1;
+        drawCanvas();
+        return;
+      }
+
+      selectedEditIndex = hitIndex;
+      dragging = true;
+
+      dragOffsetX = pos.x - edits[hitIndex].x;
+      dragOffsetY = pos.y - edits[hitIndex].y;
+
+      drawCanvas();
+    }
+
+    function moveDrag(event) {
+      if (!dragging || selectedEditIndex === -1) return;
+
+      const pos = getPointerPosition(event);
+
+      edits[selectedEditIndex].x = pos.x - dragOffsetX;
+      edits[selectedEditIndex].y = pos.y - dragOffsetY;
+
+      drawCanvas();
+    }
+
+    function endDrag() {
+      dragging = false;
+    }
+
+    function findEditAt(x, y) {
+      for (let i = edits.length - 1; i >= 0; i--) {
+        const edit = edits[i];
+
+        if (edit.type === "text") {
+          ctx.font = `bold ${edit.size}px Arial`;
+          const width = ctx.measureText(edit.value).width + 40;
+          const height = edit.size + 24;
+
+          if (
+            x >= edit.x - width / 2 &&
+            x <= edit.x + width / 2 &&
+            y >= edit.y - height / 2 &&
+            y <= edit.y + height / 2
+          ) {
+            return i;
+          }
+        }
+
+        if (edit.type === "emoji") {
+          const size = edit.size;
+          if (
+            x >= edit.x - size / 2 &&
+            x <= edit.x + size / 2 &&
+            y >= edit.y - size / 2 &&
+            y <= edit.y + size / 2
+          ) {
+            return i;
+          }
+        }
+      }
+
+      return -1;
+    }
+
+    function drawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (!loadedImage) return;
+
+      drawImageContain();
+
+      edits.forEach((edit, index) => {
+        if (edit.type === "text") {
+          drawText(edit, index === selectedEditIndex);
+        }
+
+        if (edit.type === "emoji") {
+          drawEmoji(edit, index === selectedEditIndex);
+        }
+      });
+    }
+
+    function drawImageContain() {
+      const imageRatio = loadedImage.width / loadedImage.height;
+      const canvasRatio = canvas.width / canvas.height;
+
+      let drawWidth;
+      let drawHeight;
+      let offsetX;
+      let offsetY;
+
+      if (imageRatio > canvasRatio) {
+        drawWidth = canvas.width;
+        drawHeight = canvas.width / imageRatio;
+        offsetX = 0;
+        offsetY = (canvas.height - drawHeight) / 2;
+      } else {
+        drawHeight = canvas.height;
+        drawWidth = canvas.height * imageRatio;
+        offsetX = (canvas.width - drawWidth) / 2;
+        offsetY = 0;
+      }
+
+      ctx.drawImage(loadedImage, offsetX, offsetY, drawWidth, drawHeight);
+    }
+
+    function drawText(edit, selected) {
+      ctx.save();
+
+      ctx.font = `bold ${edit.size}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      const paddingX = 24;
+      const boxHeight = edit.size + 26;
+      const boxWidth = ctx.measureText(edit.value).width + paddingX * 2;
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+      roundRect(ctx, edit.x - boxWidth / 2, edit.y - boxHeight / 2, boxWidth, boxHeight, 20);
+      ctx.fill();
+
+      if (selected) {
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#ffffff";
+        roundRect(ctx, edit.x - boxWidth / 2 - 4, edit.y - boxHeight / 2 - 4, boxWidth + 8, boxHeight + 8, 22);
+        ctx.stroke();
+      }
+
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
+      ctx.strokeText(edit.value, edit.x, edit.y);
+
+      ctx.fillStyle = edit.color;
+      ctx.fillText(edit.value, edit.x, edit.y);
+
+      ctx.restore();
+    }
+
+    function drawEmoji(edit, selected) {
+      ctx.save();
+
+      ctx.font = `${edit.size}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      ctx.shadowColor = "rgba(0,0,0,0.65)";
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 4;
+
+      ctx.fillText(edit.value, edit.x, edit.y);
+
+      ctx.shadowBlur = 0;
+
+      if (selected) {
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#ffffff";
+        ctx.strokeRect(
+          edit.x - edit.size / 2,
+          edit.y - edit.size / 2,
+          edit.size,
+          edit.size
+        );
+      }
+
+      ctx.restore();
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const recipient = document.querySelector("input[name='recipient']:checked").value;
+
+      if (!loadedImage) {
+        showResult("Вибери фото, а то нема що відправляти 😄", "error");
+        return;
+      }
+
+      try {
+        sendButton.disabled = true;
+        sendButton.textContent = "Відправляю...";
+
+        selectedEditIndex = -1;
+        drawCanvas();
+
+        const editedBlob = await canvasToBlob();
+
+        const formData = new FormData();
+        formData.append("recipient", recipient);
+        formData.append("photo", editedBlob, "edited-photo.jpg");
+
+        const response = await fetch("/api/photos/send", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "Помилка відправки");
+        }
+
+        showResult(data.message, "success");
+
+        resetSelectedPhoto();
+        document.querySelector("input[value='maksymka']").checked = true;
+
+        await loadHistory();
+      } catch (error) {
+        showResult(error.message, "error");
+      } finally {
+        sendButton.disabled = false;
+        sendButton.textContent = "Відправити фото";
+      }
+    });
+
+    function canvasToBlob() {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error("Не вдалося створити фото"));
+            return;
+          }
+
+          resolve(blob);
+        }, "image/jpeg", 0.9);
+      });
+    }
+
+    function showResult(message, type) {
+      result.textContent = message;
+      result.className = `result ${type}`;
+
+      if (type === "success") {
+        setTimeout(() => {
+          result.style.display = "none";
+        }, 2500);
+      }
+    }
+
+    async function loadHistory() {
+      try {
+        const response = await fetch("/api/photos");
+        const data = await response.json();
+
+        if (!data.success) return;
+
+        if (data.photos.length === 0) {
+          historyList.innerHTML = `
+            <div style="color: rgba(255,255,255,0.6); font-size: 14px;">
+              Поки фото нема
+            </div>
+          `;
+          return;
+        }
+
+        historyList.innerHTML = data.photos.map(photo => {
+          const date = new Date(photo.created_at).toLocaleString("uk-UA");
+          const badgeClass = photo.seen ? "seen" : "new";
+          const badgeText = photo.seen ? "Переглянуто" : "Нове";
+
+          return `
+            <div class="history-item">
+              <img src="${photo.image_url}" alt="photo" />
+              <div>
+                <div class="history-name">Для: ${photo.recipient_name || "Невідомо"}</div>
+                <div class="history-date">${date}</div>
+              </div>
+              <div class="badge ${badgeClass}">${badgeText}</div>
+            </div>
+          `;
+        }).join("");
+      } catch (error) {
+        console.error("History error:", error);
+      }
+    }
+
+    
+  </script>
+</body>
+</html>
